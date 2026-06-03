@@ -1,0 +1,9 @@
+name: oss_demo
+version: '1.0'
+profile: oss_demo
+model-paths: ["models"]
+seed-paths: ["seeds"]
+target-path: "target"
+models:
+  oss_demo:
+    +materialized: table

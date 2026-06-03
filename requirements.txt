@@ -1,0 +1,6 @@
+# Dependencies are declared in pyproject.toml. For a full dev setup
+# (server + azure backend + the dbt client to run example_project):
+#
+#   pip install -e .[azure,dev]
+#
+-e .[azure,dev]

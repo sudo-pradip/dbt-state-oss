@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dbt-state-oss"
+version = "0.1.0"
+description = "Self-hosted decision server for the dbt-state client, with pluggable state storage."
+requires-python = ">=3.9"
+
+# Core: just what the server itself imports. No cloud SDKs, no dbt client.
+dependencies = [
+    "query-cache-protobuf>=1.6.0",
+    "grpcio>=1.60.0",
+    "protobuf>=4.0.0",
+    "sqlglot>=27.6.1",
+]
+
+[project.optional-dependencies]
+# One extra per cloud backend, so users install only the SDK they use:
+#   pip install dbt-state-oss[azure]
+azure = ["azure-identity", "azure-storage-blob"]
+# `dev` pulls the dbt client stack to run example_project end-to-end.
+dev = ["dbt-core>=1.9,<2.0", "dbt-postgres>=1.9,<2.0", "dbt-state"]
+
+[project.scripts]
+dbt-state-oss = "server.__main__:main"
+
+[tool.setuptools]
+packages = ["server"]

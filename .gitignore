@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.pyc
+# dbt
+example_project/target/
+example_project/logs/
+example_project/dbt_packages/
+example_project/.user.yml
+# local reference copy of dbt-labs' Apache-2.0 client source (not ours to commit)
+reference/
+# local state-store data during dev
+.state_data/
+
+# python build artifacts
+*.egg-info/
+build/
+dist/

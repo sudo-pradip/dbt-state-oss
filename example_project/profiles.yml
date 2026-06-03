@@ -1,0 +1,21 @@
+oss_demo:
+  target: dev
+  outputs:
+    prod:
+      type: postgres
+      host: 127.0.0.1
+      port: 5433
+      user: postgres
+      password: postgres
+      dbname: dbt_oss
+      schema: prod_analytics
+      threads: 4
+    dev:
+      type: postgres
+      host: 127.0.0.1
+      port: 5433
+      user: postgres
+      password: postgres
+      dbname: dbt_oss
+      schema: dev_analytics
+      threads: 4
