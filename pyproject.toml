@@ -20,8 +20,9 @@ dependencies = [
 # One extra per cloud backend, so users install only the SDK they use:
 #   pip install dbt-state-oss[azure]
 azure = ["azure-identity", "azure-storage-blob"]
-# `dev` pulls the dbt client stack to run example_project end-to-end.
-dev = ["dbt-core>=1.9,<2.0", "dbt-postgres>=1.9,<2.0", "dbt-state"]
+s3 = ["boto3>=1.28"]
+# `dev` pulls the dbt client stack to run example_project end-to-end, plus pytest.
+dev = ["dbt-core>=1.9,<2.0", "dbt-postgres>=1.9,<2.0", "dbt-state", "pytest"]
 
 [project.scripts]
 dbt-state-oss = "server.__main__:main"

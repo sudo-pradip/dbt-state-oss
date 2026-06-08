@@ -15,7 +15,7 @@ The client, the protobuf protocol, and the shared libs are all **Apache-2.0**.
 Only the server is closed. This project builds an open replacement server that:
 
 - speaks the same gRPC protocol (reuses the client's `*Servicer` stubs),
-- keeps all state in **your own storage** (ADLS Gen2 first, S3 later),
+- keeps all state in **your own storage** (ADLS Gen2 and S3),
 - needs **no dbt Labs account** (insecure channel for dev; your own OAuth/Entra ID for prod).
 
 ## How the client/server split works (verified against the wheel)
@@ -76,10 +76,10 @@ the roadmap entries are additive.
 |---|---|---|
 | `local` | supported | `STATE_DIR` |
 | `azure_blob` | supported | `DBTSTATE_BLOB_ACCOUNT`, `DBTSTATE_BLOB_CONTAINER`, `DBTSTATE_BLOB_PREFIX` |
+| `s3` | supported | `DBTSTATE_S3_BUCKET`, `DBTSTATE_S3_PREFIX` |
 | `memory` | dev/test only | - |
 
 **Roadmap (not yet implemented):**
-- S3 (AWS)
 - Google Cloud Storage
 - Fabric OneLake files
 
@@ -92,7 +92,14 @@ az role assignment create --assignee-object-id <your-oid> --assignee-principal-t
   --scope /subscriptions/<sub>/resourceGroups/<rg>/providers/Microsoft.Storage/storageAccounts/<acct>
 ```
 
-Next milestones: S3 / GCS / OneLake backends -> fabricspark adapter extension -> clone + prod auth.
+**S3 auth:** the boto3 default credential chain (IAM role, instance profile, SSO,
+`AWS_*` env vars, or `~/.aws/credentials`). No keys are read from this repo. The
+identity needs read/write on the bucket; region comes from your standard AWS
+configuration. Start the server with
+`STATE_STORE=s3 DBTSTATE_S3_BUCKET=<bucket> .venv/bin/dbt-state-oss` after
+`pip install -e ".[s3]"`.
+
+Next milestones: GCS / OneLake backends -> fabricspark adapter extension -> clone + prod auth.
 
 ## Quickstart
 

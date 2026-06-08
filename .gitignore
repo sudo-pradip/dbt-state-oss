@@ -15,3 +15,6 @@ reference/
 *.egg-info/
 build/
 dist/
+
+# session handoff notes (local only)
+HANDOFF.md
