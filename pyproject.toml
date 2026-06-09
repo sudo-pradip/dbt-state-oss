@@ -1,12 +1,24 @@
 [build-system]
-requires = ["setuptools>=64"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "dbt-state-oss"
 version = "0.1.0"
 description = "Self-hosted decision server for the dbt-state client, with pluggable state storage."
+readme = "README.md"
 requires-python = ">=3.9"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Pradip Sodha" }]
+keywords = ["dbt", "dbt-state", "grpc", "cache", "state", "s3", "azure"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Database",
+    "Topic :: Software Development :: Build Tools",
+]
 
 # Core: just what the server itself imports. No cloud SDKs, no dbt client.
 dependencies = [
@@ -16,16 +28,22 @@ dependencies = [
     "sqlglot>=27.6.1",
 ]
 
+[project.urls]
+Homepage = "https://github.com/sudo-pradip/dbt-state-oss"
+Repository = "https://github.com/sudo-pradip/dbt-state-oss"
+Issues = "https://github.com/sudo-pradip/dbt-state-oss/issues"
+
 [project.optional-dependencies]
 # One extra per cloud backend, so users install only the SDK they use:
 #   pip install dbt-state-oss[azure]
 azure = ["azure-identity", "azure-storage-blob"]
 s3 = ["boto3>=1.28"]
-# `dev` pulls the dbt client stack to run example_project end-to-end, plus pytest.
-dev = ["dbt-core>=1.9,<2.0", "dbt-postgres>=1.9,<2.0", "dbt-state", "pytest"]
+# `dev` pulls the dbt client stack to run example_project end-to-end, plus the
+# test and packaging tooling.
+dev = ["dbt-core>=1.9,<2.0", "dbt-postgres>=1.9,<2.0", "dbt-state", "pytest", "build", "twine"]
 
 [project.scripts]
-dbt-state-oss = "server.__main__:main"
+dbt-state-oss = "dbt_state_oss.__main__:main"
 
 [tool.setuptools]
-packages = ["server"]
+packages = ["dbt_state_oss"]

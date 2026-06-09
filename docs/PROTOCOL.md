@@ -7,7 +7,8 @@ shapes below were introspected from the compiled `_pb2` descriptors.
 
 Client dials `API_URL` (default `api.state.dbt.com:443`). Server address and
 `API_SECURE` decide TLS+OAuth vs insecure. All 7 services live under
-`query_cache_protobuf.query_cache.services`.
+`query_cache_protobuf.query_cache.services`. (These config keys are read from
+env with a `RUN_CACHE_` prefix, e.g. `RUN_CACHE_API_URL` / `RUN_CACHE_API_SECURE`.)
 
 ## Services (only ~4 carry weight)
 

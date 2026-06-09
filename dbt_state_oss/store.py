@@ -105,7 +105,7 @@ class AzureBlobStore:
     identity needs the 'Storage Blob Data Contributor' role on the account.
 
     Credentials are never read from the repo - only the account/container names
-    come from env (DBTSTATE_BLOB_ACCOUNT, DBTSTATE_BLOB_CONTAINER).
+    come from config (DBTSTATE_AZURE_ACCOUNT, DBTSTATE_AZURE_CONTAINER).
     """
 
     def __init__(self, account: str, container: str, prefix: str = "state/") -> None:
@@ -207,33 +207,50 @@ class S3Store:
         )
 
 
-def make_store() -> StateStore:
-    """Build the StateStore selected by STATE_STORE (default "local").
+def make_store(
+    *,
+    store: Optional[str] = None,
+    dir: Optional[str] = None,
+    bucket: Optional[str] = None,
+    prefix: Optional[str] = None,
+    account: Optional[str] = None,
+    container: Optional[str] = None,
+) -> StateStore:
+    """Build the selected StateStore.
 
-    local:       STATE_DIR (default ./.state_data)
-    azure_blob:  DBTSTATE_BLOB_ACCOUNT, DBTSTATE_BLOB_CONTAINER (default "dbt-state"),
-                 DBTSTATE_BLOB_PREFIX (default "state/"); auth via DefaultAzureCredential.
-    s3:          DBTSTATE_S3_BUCKET, DBTSTATE_S3_PREFIX (default "state/"); auth,
-                 region, and endpoint via boto3's standard configuration.
-    memory:      no config.
+    Each value resolves as: explicit arg -> matching env var -> default. The CLI
+    passes parsed flags; env-only callers pass nothing.
+
+    local:   --dir       / DBTSTATE_LOCAL_DIR        (default ./.state_data)
+    s3:      --bucket     / DBTSTATE_S3_BUCKET        (required),
+             --prefix     / DBTSTATE_S3_PREFIX        (default state/);
+             auth/region/endpoint via boto3's standard configuration.
+    azure:   --account    / DBTSTATE_AZURE_ACCOUNT    (required),
+             --container   / DBTSTATE_AZURE_CONTAINER  (default dbt-state),
+             --prefix      / DBTSTATE_AZURE_PREFIX     (default state/);
+             auth via DefaultAzureCredential.
+    memory:  no config.
     """
-    kind = os.environ.get("STATE_STORE", "local").lower()
+    kind = (store or os.environ.get("STATE_STORE") or "local").lower()
     if kind == "memory":
         return InMemoryStore()
     if kind == "local":
-        return LocalFileStore(os.environ.get("STATE_DIR", ".state_data"))
-    if kind in ("azure_blob", "blob"):
-        account = os.environ.get("DBTSTATE_BLOB_ACCOUNT")
-        if not account:
-            raise ValueError("STATE_STORE=azure_blob requires DBTSTATE_BLOB_ACCOUNT")
-        return AzureBlobStore(
-            account=account,
-            container=os.environ.get("DBTSTATE_BLOB_CONTAINER", "dbt-state"),
-            prefix=os.environ.get("DBTSTATE_BLOB_PREFIX", "state/"),
-        )
+        return LocalFileStore(dir or os.environ.get("DBTSTATE_LOCAL_DIR") or ".state_data")
     if kind == "s3":
-        bucket = os.environ.get("DBTSTATE_S3_BUCKET")
-        if not bucket:
-            raise ValueError("STATE_STORE=s3 requires DBTSTATE_S3_BUCKET")
-        return S3Store(bucket=bucket, prefix=os.environ.get("DBTSTATE_S3_PREFIX", "state/"))
-    raise ValueError(f"Unknown STATE_STORE={kind!r} (expected memory|local|azure_blob|s3)")
+        s3_bucket = bucket or os.environ.get("DBTSTATE_S3_BUCKET")
+        if not s3_bucket:
+            raise ValueError("store 's3' requires --bucket (or DBTSTATE_S3_BUCKET)")
+        return S3Store(
+            bucket=s3_bucket,
+            prefix=prefix or os.environ.get("DBTSTATE_S3_PREFIX") or "state/",
+        )
+    if kind == "azure":
+        az_account = account or os.environ.get("DBTSTATE_AZURE_ACCOUNT")
+        if not az_account:
+            raise ValueError("store 'azure' requires --account (or DBTSTATE_AZURE_ACCOUNT)")
+        return AzureBlobStore(
+            account=az_account,
+            container=container or os.environ.get("DBTSTATE_AZURE_CONTAINER") or "dbt-state",
+            prefix=prefix or os.environ.get("DBTSTATE_AZURE_PREFIX") or "state/",
+        )
+    raise ValueError(f"unknown store {kind!r} (expected local|s3|azure|memory)")

@@ -2,6 +2,11 @@
 
 Date: 2026-06-08
 
+> Historical design note. Since this was written, the package was renamed
+> `server/` -> `dbt_state_oss/`, the `azure_blob` selector became `azure`, and
+> backend config moved to CLI flags (`--store`/`--bucket`/...) with
+> `DBTSTATE_<BACKEND>_*` env fallbacks. See the README for the current surface.
+
 ## Goal
 
 Add an `s3` backend to the pluggable `StateStore` interface so the decision

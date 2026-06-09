@@ -20,7 +20,7 @@ import urllib.parse
 
 import pytest
 
-from server.store import ExecutionRecord, S3Store
+from dbt_state_oss.store import ExecutionRecord, S3Store
 
 _ENDPOINT = os.environ.get("AWS_ENDPOINT_URL")
 

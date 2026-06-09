@@ -1,13 +1,14 @@
 """Run the dbt-state-oss decision server.
 
-    python -m server --port 50051
+    dbt-state-oss --store s3 --bucket my-bucket --port 50051
 
 Point the dbt-state client at it with:
-    API_URL=localhost:50051 API_SECURE=false RUN_CACHE_OAUTH_CLIENT_SECRET=dev
+    RUN_CACHE_API_URL=localhost:50051 RUN_CACHE_API_SECURE=false RUN_CACHE_OAUTH_CLIENT_SECRET=dev
 """
 from __future__ import annotations
 
 import argparse
+import os
 from concurrent import futures
 
 import grpc
@@ -30,8 +31,7 @@ from .servicers import (
 from .store import make_store
 
 
-def serve(port: int) -> None:
-    store = make_store()
+def serve(port: int, store) -> None:
     pending = _Pending()
 
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=16))
@@ -47,10 +47,24 @@ def serve(port: int) -> None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(prog="server")
-    ap.add_argument("--port", type=int, default=50051)
+    ap = argparse.ArgumentParser(prog="dbt-state-oss")
+    ap.add_argument("--store", choices=["local", "s3", "azure", "memory"],
+                    help="state backend (env STATE_STORE; default local)")
+    ap.add_argument("--port", type=int,
+                    help="listen port (env DBTSTATE_PORT; default 50051)")
+    ap.add_argument("--dir", help="[local] state directory (env DBTSTATE_LOCAL_DIR)")
+    ap.add_argument("--bucket", help="[s3] bucket (env DBTSTATE_S3_BUCKET)")
+    ap.add_argument("--account", help="[azure] storage account (env DBTSTATE_AZURE_ACCOUNT)")
+    ap.add_argument("--container", help="[azure] container (env DBTSTATE_AZURE_CONTAINER)")
+    ap.add_argument("--prefix", help="[s3|azure] key prefix (env DBTSTATE_S3_PREFIX/DBTSTATE_AZURE_PREFIX)")
     args = ap.parse_args()
-    serve(args.port)
+
+    port = args.port or int(os.environ.get("DBTSTATE_PORT") or 50051)
+    store = make_store(
+        store=args.store, dir=args.dir, bucket=args.bucket,
+        prefix=args.prefix, account=args.account, container=args.container,
+    )
+    serve(port, store)
 
 
 if __name__ == "__main__":

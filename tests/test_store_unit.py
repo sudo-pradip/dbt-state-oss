@@ -1,7 +1,7 @@
 """Unit tests for the state store that need no infrastructure."""
 from __future__ import annotations
 
-from server.store import ExecutionRecord, S3Store
+from dbt_state_oss.store import ExecutionRecord, S3Store
 
 
 def test_execution_record_json_round_trip():
