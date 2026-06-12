@@ -57,8 +57,14 @@ reference/       local copy of dbt-labs' Apache-2.0 client source (gitignored, n
 
 ## Status
 
-**v1 works** — postgres warehouse; `local`, `s3`, and `azure` state stores.
-Verified end-to-end against our own server with zero dbt Labs:
+`local`,
+`s3`, and `azure` state stores are tested and supported.
+
+Should work on **postgres, snowflake, databricks, redshift, and bigquery**.
+
+**postgres** and **snowflake** are tested; the others are untested (feel free to try, test and raise issues).
+
+Behaviors verified end-to-end:
 
 | scenario | result |
 |---|---|
@@ -67,9 +73,8 @@ Verified end-to-end against our own server with zero dbt Labs:
 | real SQL change to a model | that model rebuilds |
 | real change upstream | downstream rebuilds too (freshness check, cache stays safe) |
 | seed file unchanged | seed **NO-OP** (via values_hash) |
+| dev run, model not built in dev | reads its upstream from prod (defer-to-prod) |
 
-Requires postgres `track_commit_timestamp=on` (the client reads freshness from
-`pg_xact_commit_timestamp`); the local docker postgres sets it.
 
 ### State backends
 
