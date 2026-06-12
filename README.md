@@ -5,6 +5,29 @@ An open-source, self-hosted decision server for the Apache-2.0
 store in **your own storage** (local disk, S3, or Azure Blob) instead of dbt
 Labs' hosted, metered service.
 
+```bash
+pip install dbt-state-oss
+```
+
+## Contents
+
+- [At a glance](#at-a-glance)
+- [Why](#why)
+- [Behavior](#behavior)
+- [Auth](#auth)
+- [Install & run](#install--run)
+- [State backends](#state-backends)
+- [How it works](#how-it-works)
+- [Run the demo](#run-the-demo)
+- [Repo layout](#repo-layout)
+
+## At a glance
+
+- **Install:** `pip install dbt-state-oss` (add `[s3]` or `[azure]` for those backends)
+- **State stores supported:** `local`, `s3`, `azure`
+- **Warehouses tested:** postgres, snowflake
+- **Warehouses untested:** databricks, redshift, bigquery (should work, but feel free to raise an issue if there are any problems)
+
 ## Why
 
 `dbt-state` skips redundant model executions ("NO-OP" on a second run) and
@@ -19,19 +42,18 @@ Only the server is closed. This project builds an open replacement server that:
 - keeps all state in **your own storage** (local disk, S3, or Azure Blob),
 - needs **no dbt Labs account** (insecure channel for dev; your own OAuth/Entra ID for prod).
 
-## How the client/server split works (verified against the wheel)
+## Behavior
 
-- **Client (unchanged, Apache-2.0):** compiles model SQL, extracts deps + table
-  refs (sqlglot), reads each input's `last_modified` from the warehouse via an
-  adapter extension, hashes seed files, ships **raw SQL + metadata** over gRPC,
-  acts on the verdict, and reports outcomes back.
-- **Server (this repo):** computes a semantic fingerprint, matches it against
-  stored history for the target table, checks freshness + execution_type, and
-  returns **skip / clone / execute**. Persists run records to your chosen
-  backend (local, S3, or Azure Blob).
+Verified end-to-end against our own server with zero dbt Labs:
 
-Our fingerprint algorithm only has to be **self-consistent** between
-"record a run" and "check a run" - it does not need to match dbt Labs'.
+| scenario | result |
+|---|---|
+| second run, nothing changed | all models **NO-OP** (reused, no SQL run) |
+| comment / whitespace-only edit | **NO-OP** (semantic fingerprint) |
+| real SQL change to a model | that model rebuilds |
+| real change upstream | downstream rebuilds too (freshness check, cache stays safe) |
+| seed file unchanged | seed **NO-OP** (via values_hash) |
+| dev run, model not built in dev | reads its upstream from prod (defer-to-prod) |
 
 ## Auth
 
@@ -43,40 +65,27 @@ Our fingerprint algorithm only has to be **self-consistent** between
   own IdP (e.g. Azure Entra ID, same identity that guards your storage). Client does
   OAuth2 and attaches a bearer token; the server validates the JWT.
 
-## Repo layout
+## Install & run
 
-(The pip package ships only `dbt_state_oss/`; the rest is for development.)
-
-```
-dbt_state_oss/   the gRPC decision server (the engine)
-example_project/ a tiny dbt-postgres project (seed -> staging -> mart) for local testing
-tests/           unit + S3 integration tests
-docs/            PROTOCOL.md (the reverse-engineered contract), FINDINGS.md (the eval)
-reference/       local copy of dbt-labs' Apache-2.0 client source (gitignored, not committed)
+```bash
+pip install dbt-state-oss          # add [s3] or [azure] for those backends
+dbt-state-oss --store local --port 50051
 ```
 
-## Status
+Then point your dbt-state client at the server (client env vars use the
+`RUN_CACHE_` prefix):
 
-`local`,
-`s3`, and `azure` state stores are tested and supported.
+```bash
+export RUN_CACHE_API_URL=localhost:50051 RUN_CACHE_API_SECURE=false RUN_CACHE_OAUTH_CLIENT_SECRET=dev
+dbt build      # in your dbt project; run twice and the second run NO-OPs
+```
 
-Should work on **postgres, snowflake, databricks, redshift, and bigquery**.
+`RUN_CACHE_API_SECURE=false` selects an insecure channel (no OAuth);
+`RUN_CACHE_OAUTH_CLIENT_SECRET` only needs to be *present* to pass the client's
+enable-gate in non-interactive runs. Switch backends with `--store` (see the
+table below), e.g. `dbt-state-oss --store azure --account <acct>` after `az login`.
 
-**postgres** and **snowflake** are tested; the others are untested (feel free to try, test and raise issues).
-
-Behaviors verified end-to-end:
-
-| scenario | result |
-|---|---|
-| second run, nothing changed | all models **NO-OP** (reused, no SQL run) |
-| comment / whitespace-only edit | **NO-OP** (semantic fingerprint) |
-| real SQL change to a model | that model rebuilds |
-| real change upstream | downstream rebuilds too (freshness check, cache stays safe) |
-| seed file unchanged | seed **NO-OP** (via values_hash) |
-| dev run, model not built in dev | reads its upstream from prod (defer-to-prod) |
-
-
-### State backends
+## State backends
 
 Pick the backend with `--store` (or the `STATE_STORE` env var). Each backend's
 config takes a CLI flag that falls back to its env var. All backends implement
@@ -116,27 +125,21 @@ configuration. After `pip install "dbt-state-oss[s3]"`, start the server with
 
 Next milestones: GCS / OneLake backends -> fabricspark adapter extension -> clone + prod auth.
 
-## Install & run
+## How it works
 
-```bash
-pip install dbt-state-oss          # add [s3] or [azure] for those backends
-dbt-state-oss --store local --port 50051
-```
+- **Client (unchanged, Apache-2.0):** compiles model SQL, extracts deps + table
+  refs (sqlglot), reads each input's `last_modified` from the warehouse via an
+  adapter extension, hashes seed files, ships **raw SQL + metadata** over gRPC,
+  acts on the verdict, and reports outcomes back.
+- **Server (this repo):** computes a semantic fingerprint, matches it against
+  stored history for the target table, checks freshness + execution_type, and
+  returns **skip / clone / execute**. Persists run records to your chosen
+  backend (local, S3, or Azure Blob).
 
-Then point your dbt-state client at the server (client env vars use the
-`RUN_CACHE_` prefix):
+Our fingerprint algorithm only has to be **self-consistent** between
+"record a run" and "check a run" - it does not need to match dbt Labs'.
 
-```bash
-export RUN_CACHE_API_URL=localhost:50051 RUN_CACHE_API_SECURE=false RUN_CACHE_OAUTH_CLIENT_SECRET=dev
-dbt build      # in your dbt project; run twice and the second run NO-OPs
-```
-
-`RUN_CACHE_API_SECURE=false` selects an insecure channel (no OAuth);
-`RUN_CACHE_OAUTH_CLIENT_SECRET` only needs to be *present* to pass the client's
-enable-gate in non-interactive runs. Switch backends with `--store` (see the
-table above), e.g. `dbt-state-oss --store azure --account <acct>` after `az login`.
-
-## The NO-OP demo (from a clone)
+## Run the demo
 
 A runnable seed -> staging -> mart project that NO-OPs on the second run lives in
 `example_project/`. It ships only in the repo (not the pip package) and needs a
@@ -145,3 +148,15 @@ postgres with `track_commit_timestamp=on` — the client reads freshness from
 database `dbt_oss`. Clone the repo, install with the `dev` extra, start the
 server (`--store local`), then `dbt build --target prod` twice from
 `example_project/`.
+
+## Repo layout
+
+(The pip package ships only `dbt_state_oss/`; the rest is for development.)
+
+```
+dbt_state_oss/   the gRPC decision server (the engine)
+example_project/ a tiny dbt-postgres project (seed -> staging -> mart) for local testing
+tests/           unit + S3 integration tests
+docs/            PROTOCOL.md (the reverse-engineered contract), FINDINGS.md (the eval)
+reference/       local copy of dbt-labs' Apache-2.0 client source (gitignored, not committed)
+```
