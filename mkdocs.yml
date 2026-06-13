@@ -1,0 +1,67 @@
+site_name: dbt-state-oss
+site_description: >-
+  Open-source, self-hosted decision server for the dbt-state client —
+  skip redundant dbt model runs and defer to prod, with state in your own storage.
+site_url: https://sudo-pradip.github.io/dbt-state-oss/
+repo_url: https://github.com/sudo-pradip/dbt-state-oss
+repo_name: sudo-pradip/dbt-state-oss
+edit_uri: ""
+docs_dir: website
+copyright: Apache-2.0 · not affiliated with dbt Labs
+
+theme:
+  name: material
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+    - toc.follow
+
+nav:
+  - Home: index.md
+  - Install & run: install.md
+  - State backends: backends.md
+  - Hosting: hosting.md
+  - Compatibility: compatibility.md
+  - How it works: how-it-works.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/sudo-pradip/dbt-state-oss
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/dbt-state-oss/
