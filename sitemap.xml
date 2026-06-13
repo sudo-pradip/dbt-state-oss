@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://sudo-pradip.github.io/dbt-state-oss/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://sudo-pradip.github.io/dbt-state-oss/backends/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://sudo-pradip.github.io/dbt-state-oss/compatibility/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://sudo-pradip.github.io/dbt-state-oss/hosting/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://sudo-pradip.github.io/dbt-state-oss/how-it-works/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+    <url>
+         <loc>https://sudo-pradip.github.io/dbt-state-oss/install/</loc>
+         <lastmod>2026-06-13</lastmod>
+    </url>
+</urlset>
