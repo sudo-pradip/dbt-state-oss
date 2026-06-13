@@ -12,6 +12,7 @@ pip install dbt-state-oss
 ## Contents
 
 - [At a glance](#at-a-glance)
+- [Hosting](#hosting)
 - [Why](#why)
 - [Behavior](#behavior)
 - [Auth](#auth)
@@ -23,10 +24,60 @@ pip install dbt-state-oss
 
 ## At a glance
 
-- **Install:** `pip install dbt-state-oss` (add `[s3]` or `[azure]` for those backends)
-- **State stores supported:** `local`, `s3`, `azure`
-- **Warehouses tested:** postgres, snowflake
-- **Warehouses untested:** databricks, redshift, bigquery (should work, but feel free to raise an issue if there are any problems)
+`pip install dbt-state-oss` (add `[s3]` or `[azure]` for those backends)
+
+**State stores**
+
+| store | status |
+|---|---|
+| `local`, `s3`, `azure` | supported |
+| `gcs`, `Snowflake Stage(files)`, `Databricks Unity Catalog Volumes`, `Fabric OneLake Files` | roadmap |
+
+**Warehouses**
+
+| warehouse | status |
+|---|---|
+| postgres, snowflake | supported (tested) |
+| databricks, redshift, bigquery | supported (untested - feel free to raise an issue) |
+
+**dbt engine**
+
+| engine | status |
+|---|---|
+| dbt Core 1.7–1.11 (`dbt-state` plugin) | supported |
+| dbt Core 1.12+ (native, beta) | supported |
+| dbt Fusion (preview) | supported |
+
+The plugin (1.7–1.11) auto-engages once `RUN_CACHE_API_URL` is set. The native
+engines (Core 1.12+ and Fusion) need state turned on explicitly with
+`DBT_ENGINE_MANAGE_STATE=true` (Fusion also accepts `--manage-state`).
+
+## Hosting
+
+`app.state.dbt.com` bundles two things: dbt Labs' cloud storage **and** a gRPC
+decision server running 24/7. **dbt-state-oss decouples them** — you bring your
+own storage (local / S3 / Azure) and you choose where the server runs. Two ways:
+
+**1. Co-located sidecar (simplest).** Start the server next to dbt (on
+`localhost`) just for the run; state persists in your backend between runs. No
+standing infrastructure.
+
+| host | use case |
+|---|---|
+| developer's local machine | local dev / interactive runs |
+| GitHub Actions | CI runs (server as a background step) |
+| Snowflake notebook | run alongside dbt inside Snowflake |
+| Databricks notebook | run alongside dbt inside Databricks |
+| Databricks dbt job / workflow | scheduled jobs (server as a sidecar task) |
+
+**2. Central always-on** — your own `app.state.dbt.com`: one long-lived server the
+whole team/CI points at (so NO-OP state is shared across runs). Add TLS + OAuth
+(see [Auth](#auth)).
+
+| host | fit |
+|---|---|
+| container / VM — Cloud Run, Azure Container Apps, ECS/Fargate, Kubernetes, plain VM | ✅ long-lived gRPC service |
+| serverless — AWS Lambda, Azure Functions | ❌ request/response only, no persistent gRPC listener |
 
 ## Why
 
